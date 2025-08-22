@@ -1,0 +1,1 @@
+# Авторизация с помощью JWT Password Bearer
