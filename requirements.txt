@@ -1,0 +1,10 @@
+fastapi[all]
+requests
+pydantic
+asyncpg
+sqlalchemy
+pydantic-settings
+
+crypto
+pyjwt[crypto]
+bcrypt
