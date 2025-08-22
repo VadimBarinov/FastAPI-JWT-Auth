@@ -21,6 +21,20 @@ async def basic_auth_credentials(
     session: AsyncSessionDep,
     credentials: Annotated[HTTPBasicCredentials, Depends(security)]
 ) -> dict:
+    """
+    # Базовый алгоритм авторизации с помощью username и password
+    ---
+        Params:
+            - username: str
+            - password: str
+    ---
+        Returns:
+            {
+                "message": "Hi!",
+                "username": Entered username,
+                "password": Entered password,
+            }
+    """
     user = await UserDAO.get_user_by_username(session=session, username=credentials.username)
     if (user is None) or user.password != credentials.password:
         raise HTTPException(
@@ -36,11 +50,39 @@ async def basic_auth_credentials(
 
 @router.post("/register/", summary="Регистрация пользователей")
 async def register_user(user_id: AddNewUser) -> dict:
+    """
+    # Регистрация нового пользователя и добавление его в БД
+    ---
+        Params:
+            - username: str
+            - email: EmailStr
+            - password: str
+    ---
+        Returns:
+            {
+                "message": "Пользователь с ID ... зарегистрирован!"
+            }
+    """
     return {"message": f"Пользователь с ID {user_id} зарегистрирован!"}
 
 
 @router.post("/login/", summary="Авторизация пользователя")
 async def auth_user(user: ValidateAuthUser) -> Token:
+    """
+    # Авторизация пользователя (выдача access токена)
+    ---
+        Params:
+            - username: str
+            - password: str
+            - client_id: optional field
+            - client_secret: optional field
+    ---
+        Returns:
+            Token(
+                access_token=access_token,
+                token_type="Bearer",
+            )
+    """
     jwt_payload = {
         "sub": user.username,
         "email": user.email,
@@ -54,4 +96,19 @@ async def auth_user(user: ValidateAuthUser) -> Token:
 
 @router.get("/me/", summary="Получить информацию о себе")
 async def auth_user_check_self_info(user: CurrentActiveUser) -> SUserGet:
+    """
+    # Получение информации о себе (по переданному токену в заголовке запроса)
+    ---
+        Params:
+            - access_token: header field
+    ---
+        Returns:
+            {
+              "id": User ID,
+              "username": Username,
+              "email": User E-mail,
+              "password": User password,
+              "active": Active or unactive
+            }
+    """
     return user

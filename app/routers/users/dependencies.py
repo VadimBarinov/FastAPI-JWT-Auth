@@ -13,6 +13,7 @@ async def validate_auth_user(
         session: AsyncSessionDep,
         user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> SUserGet:
+    """Валидация авторизованного пользователя"""
     unauthed_exc = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя или пароль!"
@@ -36,17 +37,21 @@ ValidateAuthUser: type[SUserGet] = Annotated[SUserGet, Depends(validate_auth_use
 
 
 async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, Depends()]) -> int:
+    """Регистрация нового пользователя"""
+    # Поиск пользователя по введенным паролям
     find_users = await UserDAO.get_user_by_username_and_email(
         session=session,
         username=user_data.username,
         email=user_data.email,
     )
     if find_users:
+        # Если пользователя найдены, то выброс ошибки
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Пользователь с таким именем или почтой уже существует!"
         )
     user_result = user_data.model_dump()
+    # Хэширование введенного пароля
     user_result["password"] = AuthSystem.hash_password(user_data.password).decode()
     result = await UserDAO.add_user(
         session=session,
@@ -71,7 +76,9 @@ oath2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login/")
 async def get_current_token_payload(
         token: Annotated[str, Depends(oath2_scheme)]
 ) -> dict:
+    """Получение token payload"""
     try:
+        # Декодирование JWT
         payload = AuthSystem.decode_jwt(token=token)
     except InvalidTokenError:
         raise HTTPException(
@@ -87,7 +94,10 @@ async def get_current_user(
         session: AsyncSessionDep,
         payload: CurrentUserTokenPayload,
 ) -> SUserGet:
+    """Получение пользователя по данным из токена"""
+    # Получение username из поля subject токена
     username: str | None = payload.get("sub")
+    # Получение пользователя из БД
     user = await UserDAO.get_user_by_username(session=session, username=username)
     if user:
         return user
@@ -100,8 +110,11 @@ CurrentUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_user)]
 
 
 async def get_current_active_user(user: CurrentUser) -> SUserGet:
+    """Получение активного пользователя"""
     if user.active:
+        # Если пользователь активен, то пользователь возвращается в качестве ответа
         return user
+    # Иначе выброс ошибки о неактивном пользователе
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Неактивный пользователь!")
 
 CurrentActiveUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_active_user)]

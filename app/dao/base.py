@@ -3,6 +3,7 @@ from sqlalchemy.sql import text
 
 
 class BaseDAO:
+    """Базовый класс DAO"""
     table = None
 
     @classmethod
