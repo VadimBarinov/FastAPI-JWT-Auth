@@ -9,6 +9,11 @@ from app.routers.users.schemas import SUserGet, SUserAdd
 from app.routers.users.auth import AuthSystem
 
 
+# Так можно получить токен из заголовка
+# http_bearer = HttpBearer()
+oath2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login/")
+
+
 async def validate_auth_user(
         session: AsyncSessionDep,
         user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -69,11 +74,7 @@ async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, 
 AddNewUser: type[int] = Annotated[int, Depends(add_new_user)]
 
 
-# Так можно получить токен из заголовка
-# http_bearer = HttpBearer()
-oath2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login/")
-
-async def get_current_token_payload(
+def get_current_token_payload(
         token: Annotated[str, Depends(oath2_scheme)]
 ) -> dict:
     """Получение token payload"""
@@ -87,12 +88,9 @@ async def get_current_token_payload(
         )
     return payload
 
-CurrentUserTokenPayload: type[dict] = Annotated[dict, Depends(get_current_token_payload)]
-
-
 async def get_current_user(
         session: AsyncSessionDep,
-        payload: CurrentUserTokenPayload,
+        payload: Annotated[dict, Depends(get_current_token_payload)],
 ) -> SUserGet:
     """Получение пользователя по данным из токена"""
     # Получение username из поля subject токена
@@ -106,10 +104,7 @@ async def get_current_user(
         detail="Токен не валидный!"
     )
 
-CurrentUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_user)]
-
-
-async def get_current_active_user(user: CurrentUser) -> SUserGet:
+async def get_current_active_user(user: Annotated[SUserGet, Depends(get_current_user)]) -> SUserGet:
     """Получение активного пользователя"""
     if user.active:
         # Если пользователь активен, то пользователь возвращается в качестве ответа

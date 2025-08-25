@@ -9,12 +9,14 @@ from app.routers.users.dependencies import ValidateAuthUser, AddNewUser, Current
 from app.routers.users.schemas import SUserGet, Token
 from app.routers.users.auth import AuthSystem
 
+
 router = APIRouter(
     prefix="/users",
     tags=["Авторизация пользователей",],
 )
 
 
+# Basic авторизация в URL встраивается имя пользователя и пароль
 security = HTTPBasic()
 @router.get("/basic_auth/", summary="Basic авторизация")
 async def basic_auth_credentials(
@@ -83,11 +85,7 @@ async def auth_user(user: ValidateAuthUser) -> Token:
                 token_type="Bearer",
             )
     """
-    jwt_payload = {
-        "sub": user.username,
-        "email": user.email,
-    }
-    access_token = AuthSystem.encode_jwt(payload=jwt_payload)
+    access_token = AuthSystem.create_access_token(user)
     return Token(
         access_token=access_token,
         token_type="Bearer",

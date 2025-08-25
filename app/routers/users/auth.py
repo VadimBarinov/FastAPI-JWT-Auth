@@ -4,6 +4,7 @@ import jwt
 import bcrypt
 
 from app.core.config import settings
+from app.routers.users.schemas import SUserGet
 
 
 class AuthSystem:
@@ -18,7 +19,7 @@ class AuthSystem:
             algorithm: str = auth_data.ALGORITHM,
             expire_timedelta: timedelta | None = None,
             expire_minutes: int = settings.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
-    ):
+    ) -> str:
         """Своя обертка для шифрования JWT"""
         to_encode = payload.copy()
         now = datetime.now(timezone.utc)
@@ -30,7 +31,7 @@ class AuthSystem:
             expire = now + timedelta(minutes=expire_minutes)
         # Добавление новый полей в payload
         to_encode.update(exp=expire, iat=now)
-        encoded = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
+        encoded: str = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
         return encoded
 
     @staticmethod
@@ -38,9 +39,9 @@ class AuthSystem:
             token: str | bytes,
             public_key: str = auth_data.PUBLIC_KEY_PATH.read_text(),
             algorithm: str = auth_data.ALGORITHM,
-    ):
+    ) -> dict:
         """Своя обертка для расшифровки JWT"""
-        decoded = jwt.decode(jwt=token, key=public_key, algorithms=algorithm)
+        decoded: dict = jwt.decode(jwt=token, key=public_key, algorithms=algorithm)
         return decoded
 
     @staticmethod
@@ -59,3 +60,14 @@ class AuthSystem:
             password=password.encode(),
             hashed_password=hashed_password,
         )
+
+    @staticmethod
+    def create_access_token(user: SUserGet) -> str:
+        """Создание токена для переданного пользователя"""
+        jwt_payload = {
+            "sub": user.username,
+            "username": user.username,
+            "email": user.email,
+        }
+        access_token: str = AuthSystem.encode_jwt(payload=jwt_payload)
+        return access_token
