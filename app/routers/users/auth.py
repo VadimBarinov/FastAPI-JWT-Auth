@@ -1,73 +1,52 @@
 from datetime import timedelta, datetime, timezone
-
 import jwt
 import bcrypt
 
 from app.core.config import settings
-from app.routers.users.schemas import SUserGet
 
 
-class AuthSystem:
-    """Класс для взаимодействия с JWT"""
-    # Данные для JWT (приватный и публичный ключи и тд)
-    auth_data = settings.auth_jwt
+auth_data = settings.auth_jwt
+def encode_jwt(
+        payload: dict,
+        private_key: str = auth_data.PRIVATE_KEY_PATH.read_text(),
+        algorithm: str = auth_data.ALGORITHM,
+        expire_timedelta: timedelta | None = None,
+        expire_minutes: int = settings.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
+) -> str:
+    """Своя обертка для шифрования JWT"""
+    to_encode = payload.copy()
+    now = datetime.now(timezone.utc)
+    if expire_timedelta:
+        # Если указан срок действия токена
+        expire = now + expire_timedelta
+    else:
+        # Иначе используется константа ACCESS_TOKEN_EXPIRE_MINUTES из настроек
+        expire = now + timedelta(minutes=expire_minutes)
+    # Добавление новый полей в payload
+    to_encode.update(exp=expire, iat=now)
+    encoded: str = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
+    return encoded
 
-    @staticmethod
-    def encode_jwt(
-            payload: dict,
-            private_key: str = auth_data.PRIVATE_KEY_PATH.read_text(),
-            algorithm: str = auth_data.ALGORITHM,
-            expire_timedelta: timedelta | None = None,
-            expire_minutes: int = settings.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
-    ) -> str:
-        """Своя обертка для шифрования JWT"""
-        to_encode = payload.copy()
-        now = datetime.now(timezone.utc)
-        if expire_timedelta:
-            # Если указан срок действия токена
-            expire = now + expire_timedelta
-        else:
-            # Иначе используется константа ACCESS_TOKEN_EXPIRE_MINUTES из настроек
-            expire = now + timedelta(minutes=expire_minutes)
-        # Добавление новый полей в payload
-        to_encode.update(exp=expire, iat=now)
-        encoded: str = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
-        return encoded
+def decode_jwt(
+        token: str | bytes,
+        public_key: str = auth_data.PUBLIC_KEY_PATH.read_text(),
+        algorithm: str = auth_data.ALGORITHM,
+) -> dict:
+    """Своя обертка для расшифровки JWT"""
+    decoded: dict = jwt.decode(jwt=token, key=public_key, algorithms=algorithm)
+    return decoded
 
-    @staticmethod
-    def decode_jwt(
-            token: str | bytes,
-            public_key: str = auth_data.PUBLIC_KEY_PATH.read_text(),
-            algorithm: str = auth_data.ALGORITHM,
-    ) -> dict:
-        """Своя обертка для расшифровки JWT"""
-        decoded: dict = jwt.decode(jwt=token, key=public_key, algorithms=algorithm)
-        return decoded
+def hash_password(password: str) -> bytes:
+    """Хэширование пароля"""
+    # Добавление соли
+    salt = bcrypt.gensalt()
+    # Кодирование пароля в байты
+    pwd_bytes: bytes = password.encode()
+    return bcrypt.hashpw(password=pwd_bytes, salt=salt)
 
-    @staticmethod
-    def hash_password(password: str) -> bytes:
-        """Хэширование пароля"""
-        # Добавление соли
-        salt = bcrypt.gensalt()
-        # Кодирование пароля в байты
-        pwd_bytes: bytes = password.encode()
-        return bcrypt.hashpw(password=pwd_bytes, salt=salt)
-
-    @staticmethod
-    def validate_password(password: str, hashed_password: bytes) -> bool:
-        """Валидация введенного пароля"""
-        return bcrypt.checkpw(
-            password=password.encode(),
-            hashed_password=hashed_password,
-        )
-
-    @staticmethod
-    def create_access_token(user: SUserGet) -> str:
-        """Создание токена для переданного пользователя"""
-        jwt_payload = {
-            "sub": user.username,
-            "username": user.username,
-            "email": user.email,
-        }
-        access_token: str = AuthSystem.encode_jwt(payload=jwt_payload)
-        return access_token
+def validate_password(password: str, hashed_password: bytes) -> bool:
+    """Валидация введенного пароля"""
+    return bcrypt.checkpw(
+        password=password.encode(),
+        hashed_password=hashed_password,
+    )

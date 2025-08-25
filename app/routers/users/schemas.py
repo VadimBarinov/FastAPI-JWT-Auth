@@ -4,7 +4,8 @@ from pydantic import BaseModel, EmailStr, Field
 class Token(BaseModel):
     """Схема токена"""
     access_token: str
-    token_type: str
+    refresh_token: str | None = None
+    token_type: str = "Bearer"
 
 
 class SUserGet(BaseModel):

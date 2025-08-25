@@ -1,18 +1,23 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security import HTTPBasic, HTTPBasicCredentials, HTTPBearer
 
 from app.dependencies import AsyncSessionDep
 from app.routers.users.dao import UserDAO
-from app.routers.users.dependencies import ValidateAuthUser, AddNewUser, CurrentActiveUser
+from app.routers.users.utils import ValidateAuthUser, AddNewUser, CurrentAuthActiveUser
+from app.routers.users.helpers import create_access_token, create_refresh_token
 from app.routers.users.schemas import SUserGet, Token
-from app.routers.users.auth import AuthSystem
 
 
+# Так можно получить токен из заголовка
+http_bearer = HTTPBearer(auto_error=False)
 router = APIRouter(
     prefix="/users",
     tags=["Авторизация пользователей",],
+    # В каждом запросе будет ожидаться токен
+    # Нужно для проверки типа токена
+    dependencies=[Depends(http_bearer),],
 )
 
 
@@ -85,15 +90,24 @@ async def auth_user(user: ValidateAuthUser) -> Token:
                 token_type="Bearer",
             )
     """
-    access_token = AuthSystem.create_access_token(user)
+    access_token = create_access_token(user)
+    refresh_token = create_refresh_token(user)
     return Token(
         access_token=access_token,
-        token_type="Bearer",
+        refresh_token=refresh_token,
     )
 
 
+# response_model_exclude_none=True
+# не указывает поля, если они равны None
+@router.post("/refresh/", response_model_exclude_none=True, summary="Refresh access токен")
+def refresh_auth_jwt() -> Token:
+    pass
+
+
+
 @router.get("/me/", summary="Получить информацию о себе")
-async def auth_user_check_self_info(user: CurrentActiveUser) -> SUserGet:
+async def auth_user_check_self_info(user: CurrentAuthActiveUser) -> SUserGet:
     """
     # Получение информации о себе (по переданному токену в заголовке запроса)
     ---

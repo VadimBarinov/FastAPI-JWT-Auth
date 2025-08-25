@@ -1,33 +1,28 @@
 from typing import Annotated
-from fastapi import HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jwt import InvalidTokenError
+from fastapi import HTTPException, status, Depends, Form
 
 from app.dependencies import AsyncSessionDep
 from app.routers.users.dao import UserDAO
 from app.routers.users.schemas import SUserGet, SUserAdd
-from app.routers.users.auth import AuthSystem
-
-
-# Так можно получить токен из заголовка
-# http_bearer = HttpBearer()
-oath2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login/")
+from app.routers.users.auth import hash_password, validate_password
+from app.routers.users.validation import get_current_auth_user
 
 
 async def validate_auth_user(
         session: AsyncSessionDep,
-        user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        username: str = Form(),
+        password: str = Form(),
 ) -> SUserGet:
     """Валидация авторизованного пользователя"""
     unauthed_exc = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя или пароль!"
     )
-    user: SUserGet = await UserDAO.get_user_by_username(session=session, username=user_data.username)
+    user: SUserGet = await UserDAO.get_user_by_username(session=session, username=username)
     if not user:
         raise unauthed_exc
-    if not AuthSystem.validate_password(
-            password=user_data.password,
+    if not validate_password(
+            password=password,
             hashed_password=user.password.encode(),
     ):
         raise unauthed_exc
@@ -57,7 +52,7 @@ async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, 
         )
     user_result = user_data.model_dump()
     # Хэширование введенного пароля
-    user_result["password"] = AuthSystem.hash_password(user_data.password).decode()
+    user_result["password"] = hash_password(user_data.password).decode()
     result = await UserDAO.add_user(
         session=session,
         username=user_result["username"],
@@ -74,37 +69,7 @@ async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, 
 AddNewUser: type[int] = Annotated[int, Depends(add_new_user)]
 
 
-def get_current_token_payload(
-        token: Annotated[str, Depends(oath2_scheme)]
-) -> dict:
-    """Получение token payload"""
-    try:
-        # Декодирование JWT
-        payload = AuthSystem.decode_jwt(token=token)
-    except InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Токен не валидный!"
-        )
-    return payload
-
-async def get_current_user(
-        session: AsyncSessionDep,
-        payload: Annotated[dict, Depends(get_current_token_payload)],
-) -> SUserGet:
-    """Получение пользователя по данным из токена"""
-    # Получение username из поля subject токена
-    username: str | None = payload.get("sub")
-    # Получение пользователя из БД
-    user = await UserDAO.get_user_by_username(session=session, username=username)
-    if user:
-        return user
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Токен не валидный!"
-    )
-
-async def get_current_active_user(user: Annotated[SUserGet, Depends(get_current_user)]) -> SUserGet:
+async def get_current_auth_active_user(user: Annotated[SUserGet, Depends(get_current_auth_user)]) -> SUserGet:
     """Получение активного пользователя"""
     if user.active:
         # Если пользователь активен, то пользователь возвращается в качестве ответа
@@ -112,4 +77,5 @@ async def get_current_active_user(user: Annotated[SUserGet, Depends(get_current_
     # Иначе выброс ошибки о неактивном пользователе
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Неактивный пользователь!")
 
-CurrentActiveUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_active_user)]
+
+CurrentAuthActiveUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_auth_active_user)]
