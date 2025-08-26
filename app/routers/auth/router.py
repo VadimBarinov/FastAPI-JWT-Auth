@@ -1,19 +1,11 @@
-from typing import Annotated
-
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
-    status
 )
 from fastapi.security import (
-    HTTPBasic,
-    HTTPBasicCredentials,
     HTTPBearer
 )
 
-from app.dependencies import AsyncSessionDep
-from app.routers.auth.dao import UserDAO
 from app.routers.auth.dependencies import (
     ValidateAuthUser,
     AddNewUser
@@ -41,41 +33,6 @@ router = APIRouter(
     # Нужно для проверки типа токена
     dependencies=[Depends(http_bearer), ],
 )
-
-# Basic авторизация в URL встраивается имя пользователя и пароль
-security = HTTPBasic()
-
-
-@router.get("/basic_auth/", summary="Basic авторизация")
-async def basic_auth_credentials(
-        session: AsyncSessionDep,
-        credentials: Annotated[HTTPBasicCredentials, Depends(security)]
-) -> dict:
-    """
-    # Базовый алгоритм авторизации с помощью username и password
-    ---
-        Params:
-            - username: str
-            - password: str
-    ---
-        Returns:
-            {
-                "message": "Hi!",
-                "username": Entered username,
-                "password": Entered password,
-            }
-    """
-    user = await UserDAO.get_user_by_username(session=session, username=credentials.username)
-    if (user is None) or user.password != credentials.password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя или пароль!"
-        )
-    return {
-        "message": "Hi!",
-        "username": credentials.username,
-        "password": credentials.password,
-    }
 
 
 @router.post("/register/", summary="Регистрация пользователей")
