@@ -1,32 +1,55 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
-from fastapi.security import HTTPBasic, HTTPBasicCredentials, HTTPBearer
-
-from app.dependencies import AsyncSessionDep
-from app.routers.users.dao import UserDAO
-from app.routers.users.utils import ValidateAuthUser, AddNewUser, CurrentAuthActiveUser
-from app.routers.users.helpers import create_access_token, create_refresh_token
-from app.routers.users.schemas import SUserGet, Token
-
-
-# Так можно получить токен из заголовка
-http_bearer = HTTPBearer(auto_error=False)
-router = APIRouter(
-    prefix="/users",
-    tags=["Авторизация пользователей",],
-    # В каждом запросе будет ожидаться токен
-    # Нужно для проверки типа токена
-    dependencies=[Depends(http_bearer),],
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status
+)
+from fastapi.security import (
+    HTTPBasic,
+    HTTPBasicCredentials,
+    HTTPBearer
 )
 
+from app.dependencies import AsyncSessionDep
+from app.routers.auth.dao import UserDAO
+from app.routers.auth.dependencies import (
+    ValidateAuthUser,
+    AddNewUser
+)
+from app.routers.auth.auth_helpers import (
+    create_access_token,
+    create_refresh_token
+)
+from app.routers.auth.schemas import (
+    TokenInfo,
+    SUserGet
+)
+from app.routers.auth.validation import (
+    CurrentAuthUserForRefresh,
+    CurrentAuthActiveUser
+)
+
+# Так можно получить токен из заголовка
+# auto_error=False чтобы не выпадала ошибка в случае, когда токен не указан
+http_bearer = HTTPBearer(auto_error=False)
+router = APIRouter(
+    prefix="/auth",
+    tags=["Авторизация пользователей", ],
+    # В каждом запросе будет ожидаться токен
+    # Нужно для проверки типа токена
+    dependencies=[Depends(http_bearer), ],
+)
 
 # Basic авторизация в URL встраивается имя пользователя и пароль
 security = HTTPBasic()
+
+
 @router.get("/basic_auth/", summary="Basic авторизация")
 async def basic_auth_credentials(
-    session: AsyncSessionDep,
-    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
+        session: AsyncSessionDep,
+        credentials: Annotated[HTTPBasicCredentials, Depends(security)]
 ) -> dict:
     """
     # Базовый алгоритм авторизации с помощью username и password
@@ -74,7 +97,7 @@ async def register_user(user_id: AddNewUser) -> dict:
 
 
 @router.post("/login/", summary="Авторизация пользователя")
-async def auth_user(user: ValidateAuthUser) -> Token:
+async def auth_user(user: ValidateAuthUser) -> TokenInfo:
     """
     # Авторизация пользователя (выдача access токена)
     ---
@@ -87,12 +110,13 @@ async def auth_user(user: ValidateAuthUser) -> Token:
         Returns:
             Token(
                 access_token=access_token,
+                refresh_token=refresh_token,
                 token_type="Bearer",
             )
     """
     access_token = create_access_token(user)
     refresh_token = create_refresh_token(user)
-    return Token(
+    return TokenInfo(
         access_token=access_token,
         refresh_token=refresh_token,
     )
@@ -101,9 +125,23 @@ async def auth_user(user: ValidateAuthUser) -> Token:
 # response_model_exclude_none=True
 # не указывает поля, если они равны None
 @router.post("/refresh/", response_model_exclude_none=True, summary="Refresh access токен")
-def refresh_auth_jwt() -> Token:
-    pass
-
+async def refresh_auth_jwt(user: CurrentAuthUserForRefresh) -> TokenInfo:
+    """
+    # Refresh access токена
+    ---
+        Params:
+            - refresh_token: header_field
+    ---
+        Returns:
+            Token(
+                access_token=access_token,
+                token_type="Bearer",
+            )
+    """
+    access_token = create_access_token(user)
+    return TokenInfo(
+        access_token=access_token
+    )
 
 
 @router.get("/me/", summary="Получить информацию о себе")

@@ -1,11 +1,21 @@
 from typing import Annotated
-from fastapi import HTTPException, status, Depends, Form
+from fastapi import (
+    HTTPException,
+    status,
+    Depends,
+    Form
+)
 
 from app.dependencies import AsyncSessionDep
-from app.routers.users.dao import UserDAO
-from app.routers.users.schemas import SUserGet, SUserAdd
-from app.routers.users.auth import hash_password, validate_password
-from app.routers.users.validation import get_current_auth_user
+from app.routers.auth.dao import UserDAO
+from app.routers.auth.auth_utils import (
+    hash_password,
+    validate_password
+)
+from app.routers.auth.schemas import (
+    SUserGet,
+    SUserAdd
+)
 
 
 async def validate_auth_user(
@@ -15,8 +25,8 @@ async def validate_auth_user(
 ) -> SUserGet:
     """Валидация авторизованного пользователя"""
     unauthed_exc = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя или пароль!"
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Неверное имя или пароль!"
     )
     user: SUserGet = await UserDAO.get_user_by_username(session=session, username=username)
     if not user:
@@ -32,6 +42,7 @@ async def validate_auth_user(
             detail="Пользователь неактивен!"
         )
     return user
+
 
 ValidateAuthUser: type[SUserGet] = Annotated[SUserGet, Depends(validate_auth_user)]
 
@@ -66,16 +77,5 @@ async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, 
         )
     return result
 
+
 AddNewUser: type[int] = Annotated[int, Depends(add_new_user)]
-
-
-async def get_current_auth_active_user(user: Annotated[SUserGet, Depends(get_current_auth_user)]) -> SUserGet:
-    """Получение активного пользователя"""
-    if user.active:
-        # Если пользователь активен, то пользователь возвращается в качестве ответа
-        return user
-    # Иначе выброс ошибки о неактивном пользователе
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Неактивный пользователь!")
-
-
-CurrentAuthActiveUser: type[SUserGet] = Annotated[SUserGet, Depends(get_current_auth_active_user)]

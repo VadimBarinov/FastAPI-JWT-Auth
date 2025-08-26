@@ -1,3 +1,4 @@
+import uuid
 from datetime import timedelta, datetime, timezone
 import jwt
 import bcrypt
@@ -23,7 +24,12 @@ def encode_jwt(
         # Иначе используется константа ACCESS_TOKEN_EXPIRE_MINUTES из настроек
         expire = now + timedelta(minutes=expire_minutes)
     # Добавление новый полей в payload
-    to_encode.update(exp=expire, iat=now)
+    to_encode.update(
+        exp=expire,
+        iat=now,
+        # JSON Token Identifier
+        jti=str(uuid.uuid4()),
+    )
     encoded: str = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
     return encoded
 

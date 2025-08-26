@@ -1,7 +1,11 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field
+)
 
 
-class Token(BaseModel):
+class TokenInfo(BaseModel):
     """Схема токена"""
     access_token: str
     refresh_token: str | None = None
