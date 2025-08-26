@@ -4,9 +4,11 @@ from app.core.config import settings
 from app.routers.auth.auth_utils import encode_jwt
 from app.routers.auth.schemas import SUserGet
 
+
 TOKEN_TYPE_FIELD = "type"
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
+
 
 def create_jwt(
         token_type: str,
@@ -24,6 +26,7 @@ def create_jwt(
     )
     return token
 
+
 def create_access_token(user: SUserGet) -> str:
     """Создание токена для переданного пользователя"""
     jwt_payload = {
@@ -36,6 +39,7 @@ def create_access_token(user: SUserGet) -> str:
         token_data=jwt_payload,
         expire_minutes=settings.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
+
 
 def create_refresh_token(user: SUserGet) -> str:
     """Создание refresh токена"""

@@ -7,6 +7,8 @@ from app.core.config import settings
 
 
 auth_data = settings.auth_jwt
+
+
 def encode_jwt(
         payload: dict,
         private_key: str = auth_data.PRIVATE_KEY_PATH.read_text(),
@@ -33,6 +35,7 @@ def encode_jwt(
     encoded: str = jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
     return encoded
 
+
 def decode_jwt(
         token: str | bytes,
         public_key: str = auth_data.PUBLIC_KEY_PATH.read_text(),
@@ -42,6 +45,7 @@ def decode_jwt(
     decoded: dict = jwt.decode(jwt=token, key=public_key, algorithms=algorithm)
     return decoded
 
+
 def hash_password(password: str) -> bytes:
     """Хэширование пароля"""
     # Добавление соли
@@ -49,6 +53,7 @@ def hash_password(password: str) -> bytes:
     # Кодирование пароля в байты
     pwd_bytes: bytes = password.encode()
     return bcrypt.hashpw(password=pwd_bytes, salt=salt)
+
 
 def validate_password(password: str, hashed_password: bytes) -> bool:
     """Валидация введенного пароля"""
