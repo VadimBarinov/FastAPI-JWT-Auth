@@ -1,8 +1,8 @@
 from datetime import timedelta
 
-from app.core.config import settings
-from app.routers.auth.auth_utils import encode_jwt
-from app.routers.auth.schemas import SUserGet
+from core.config import settings
+from .auth_utils import encode_jwt
+from .schemas import SUserGet
 
 
 TOKEN_TYPE_FIELD = "type"

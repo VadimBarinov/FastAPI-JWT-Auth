@@ -3,7 +3,7 @@ from datetime import timedelta, datetime, timezone
 import jwt
 import bcrypt
 
-from app.core.config import settings
+from core.config import settings
 
 
 auth_data = settings.auth_jwt

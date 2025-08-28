@@ -1,22 +1,19 @@
 FROM python:3
 
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
 WORKDIR /api
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+COPY ./certs ./certs
 
-COPY ./app/ ./app/
-COPY poetry.lock .
-COPY pyproject.toml .
-COPY README.md .
-COPY .env .
+RUN pip install --upgrade pip wheel poetry
+RUN poetry config virtualenvs.create false --local
 
-RUN pip install poetry
+COPY pyproject.toml poetry.lock .
 RUN poetry install
 
-RUN mkdir certs
-WORKDIR certs
-RUN openssl genrsa -out jwt-private.pem 2048
-RUN openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem
+COPY .env .
+COPY ./app/ ./app/
 
-WORKDIR /api
+CMD ["python3", "app/main.py"]

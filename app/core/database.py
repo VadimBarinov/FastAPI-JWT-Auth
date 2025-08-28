@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 
-from app.core.config import settings
+from .config import settings
 
 # URL для подключения к БД, берется из настроек проекта
 DATABASE_URL = settings.db_url

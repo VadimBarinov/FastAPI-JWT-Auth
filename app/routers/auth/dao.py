@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
-from app.dao.base import BaseDAO
+from dao.base import BaseDAO
 
 
 class UserDAO(BaseDAO):

@@ -1,3 +1,6 @@
+[tool.poetry]
+package-mode = false
+
 [project]
 name = "app"
 version = "0.1.0"
@@ -5,8 +8,6 @@ description = ""
 authors = [
     {name = "VadimBarinov",email = "barinovvadim87@gmail.com"}
 ]
-license = {text = "MIT"}
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
 

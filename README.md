@@ -185,7 +185,16 @@ git clone https://github.com/VadimBarinov/FastAPI-JWT-Auth.git
 cd FastAPI-JWT-Auth
 ```
 
-4. Запустить приложение
+4. Выполнить команды для создания пары приватного и публичного ключа
+```bash
+mkdir certs;
+cd certs;
+openssl genrsa -out jwt-private.pem 2048;
+openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem;
+cd ..;
+```
+
+5. Запустить приложение
 
 ```bash
 docker-compose up

@@ -9,15 +9,15 @@ from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from starlette import status
 
-from app.dependencies import AsyncSessionDep
-from app.routers.auth.auth_utils import decode_jwt
-from app.routers.auth.auth_helpers import (
+from dependencies import AsyncSessionDep
+from .auth_utils import decode_jwt
+from .auth_helpers import (
     TOKEN_TYPE_FIELD,
     ACCESS_TOKEN_TYPE,
     REFRESH_TOKEN_TYPE
 )
-from app.routers.auth.dao import UserDAO
-from app.routers.auth.schemas import SUserGet
+from .dao import UserDAO
+from .schemas import SUserGet
 
 oath2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login/")
 

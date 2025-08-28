@@ -6,13 +6,13 @@ from fastapi import (
     Form
 )
 
-from app.dependencies import AsyncSessionDep
-from app.routers.auth.dao import UserDAO
-from app.routers.auth.auth_utils import (
+from dependencies import AsyncSessionDep
+from .dao import UserDAO
+from .auth_utils import (
     hash_password,
     validate_password
 )
-from app.routers.auth.schemas import (
+from .schemas import (
     SUserGet,
     SUserAdd
 )

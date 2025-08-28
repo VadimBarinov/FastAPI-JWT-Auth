@@ -6,19 +6,19 @@ from fastapi.security import (
     HTTPBearer
 )
 
-from app.routers.auth.dependencies import (
+from .dependencies import (
     ValidateAuthUser,
     AddNewUser
 )
-from app.routers.auth.auth_helpers import (
+from .auth_helpers import (
     create_access_token,
     create_refresh_token
 )
-from app.routers.auth.schemas import (
+from .schemas import (
     TokenInfo,
     SUserGet
 )
-from app.routers.auth.validation import (
+from .validation import (
     CurrentAuthUserForRefresh,
     CurrentAuthActiveUser
 )
