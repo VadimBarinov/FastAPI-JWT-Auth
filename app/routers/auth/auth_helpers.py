@@ -16,7 +16,6 @@ def create_jwt(
         expire_timedelta: timedelta | None = None,
         expire_minutes: int = settings.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
 ) -> str:
-    """Создание payload токена"""
     jwt_payload = {TOKEN_TYPE_FIELD: token_type}
     jwt_payload.update(token_data)
     token: str = encode_jwt(
@@ -28,7 +27,6 @@ def create_jwt(
 
 
 def create_access_token(user: SUserGet) -> str:
-    """Создание токена для переданного пользователя"""
     jwt_payload = {
         "sub": user.username,
         "username": user.username,
@@ -42,7 +40,6 @@ def create_access_token(user: SUserGet) -> str:
 
 
 def create_refresh_token(user: SUserGet) -> str:
-    """Создание refresh токена"""
     jwt_payload = {
         "sub": user.username,
     }

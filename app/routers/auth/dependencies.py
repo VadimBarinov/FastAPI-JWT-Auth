@@ -23,7 +23,6 @@ async def validate_auth_user(
         username: str = Form(),
         password: str = Form(),
 ) -> SUserGet:
-    """Валидация авторизованного пользователя"""
     unauthed_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Неверное имя или пароль!"
@@ -48,21 +47,17 @@ ValidateAuthUser: type[SUserGet] = Annotated[SUserGet, Depends(validate_auth_use
 
 
 async def add_new_user(session: AsyncSessionDep, user_data: Annotated[SUserAdd, Depends()]) -> int:
-    """Регистрация нового пользователя"""
-    # Поиск пользователя по введенным паролям
     find_users = await UserDAO.get_user_by_username_and_email(
         session=session,
         username=user_data.username,
         email=user_data.email,
     )
     if find_users:
-        # Если пользователя найдены, то выброс ошибки
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Пользователь с таким именем или почтой уже существует!"
         )
     user_result = user_data.model_dump()
-    # Хэширование введенного пароля
     user_result["password"] = hash_password(user_data.password).decode()
     result = await UserDAO.add_user(
         session=session,

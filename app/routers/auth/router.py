@@ -23,14 +23,11 @@ from .validation import (
     CurrentAuthActiveUser
 )
 
-# Так можно получить токен из заголовка
-# auto_error=False чтобы не выпадала ошибка в случае, когда токен не указан
+
 http_bearer = HTTPBearer(auto_error=False)
 router = APIRouter(
     prefix="/auth",
     tags=["Авторизация пользователей", ],
-    # В каждом запросе будет ожидаться токен
-    # Нужно для проверки типа токена
     dependencies=[Depends(http_bearer), ],
 )
 

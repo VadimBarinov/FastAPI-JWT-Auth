@@ -25,9 +25,7 @@ oath2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login/")
 def get_current_token_payload(
         token: Annotated[str, Depends(oath2_scheme)]
 ) -> dict:
-    """Получение token payload"""
     try:
-        # Декодирование JWT
         payload = decode_jwt(token=token)
     except InvalidTokenError:
         raise HTTPException(
@@ -38,7 +36,6 @@ def get_current_token_payload(
 
 
 def validate_token_type(payload: dict, token_type: str) -> bool:
-    """Валидауия типа токена"""
     current_token_type = payload.get(TOKEN_TYPE_FIELD)
     if current_token_type == token_type:
         return True
@@ -49,9 +46,7 @@ def validate_token_type(payload: dict, token_type: str) -> bool:
 
 
 async def get_user_by_token_subject(session: AsyncSession, payload: dict) -> SUserGet:
-    """Получение пользователя по token payload sub"""
     username: str | None = payload.get("sub")
-    # Получение пользователя из БД
     user = await UserDAO.get_user_by_username(session=session, username=username)
     if user:
         return user
@@ -62,7 +57,6 @@ async def get_user_by_token_subject(session: AsyncSession, payload: dict) -> SUs
 
 
 class UserGetterFromToken:
-    """Класс для получения пользователя по информации из токена"""
     def __init__(
             self,
             token_type: str
@@ -75,7 +69,6 @@ class UserGetterFromToken:
             payload: Annotated[dict, Depends(get_current_token_payload)]
     ) -> SUserGet:
         validate_token_type(payload=payload, token_type=self.token_type)
-        # Получение username из поля subject токена
         return await get_user_by_token_subject(session=session, payload=payload)
 
 
@@ -84,11 +77,8 @@ CurrentAuthUserForRefresh: type[SUserGet] = Annotated[SUserGet, Depends(UserGett
 
 
 async def get_current_auth_active_user(user: CurrentAuthUser) -> SUserGet:
-    """Получение активного пользователя"""
     if user.active:
-        # Если пользователь активен, то пользователь возвращается в качестве ответа
         return user
-    # Иначе выброс ошибки о неактивном пользователе
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Неактивный пользователь!")
 
 
