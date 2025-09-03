@@ -76,8 +76,6 @@ async def auth_user(user: ValidateAuthUser) -> TokenInfo:
     )
 
 
-# response_model_exclude_none=True
-# не указывает поля, если они равны None
 @router.post("/refresh/", response_model_exclude_none=True, summary="Refresh access токен")
 async def refresh_auth_jwt(user: CurrentAuthUserForRefresh) -> TokenInfo:
     """
